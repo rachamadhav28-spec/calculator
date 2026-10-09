@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dark Calculator</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --calc-bg: #1c1c1e;
+            --display-color: #ffffff;
+            --btn-number-bg: #3a3a3c;
+            --btn-number-text: #ffffff;
+            --btn-operator-bg: #ff9f0a;
+            --btn-operator-text: #ffffff;
+            --btn-special-bg: #a5a5a5;
+            --btn-special-text: #000000;
+            --btn-active-opacity: 0.7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: var(--calc-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (max-width: 450px) {
+            .calculator {
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                padding: 15px;
+            }
+        }
+
+        .display-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .history {
+            font-size: 1.5rem;
+            color: #8e8e93;
+            min-height: 2rem;
+            word-break: break-all;
+            text-align: right;
+            margin-bottom: 5px;
+        }
+
+        .current-input {
+            font-size: 4.5rem;
+            font-weight: 300;
+            color: var(--display-color);
+            word-break: break-all;
+            text-align: right;
+            line-height: 1;
+            max-height: 150px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            border: none;
+            outline: none;
+            border-radius: 50%;
+            font-size: 2rem;
+            font-weight: 500;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: filter 0.1s ease;
+        }
+
+        button:active {
+            filter: brightness(1.3);
+        }
+
+        .btn-number {
+            background-color: var(--btn-number-bg);
+            color: var(--btn-number-text);
+        }
+
+        .btn-operator {
+            background-color: var(--btn-operator-bg);
+            color: var(--btn-operator-text);
+        }
+
+        .btn-special {
+            background-color: var(--btn-special-bg);
+            color: var(--btn-special-text);
+        }
+
+        .span-2 {
+            grid-column: span 2;
+            aspect-ratio: auto;
+            border-radius: 40px;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="display-container">
+            <div class="history" id="history"></div>
+            <div class="current-input" id="display">0</div>
+        </div>
+        <div class="buttons-grid">
+            <button class="btn-special span-2" onclick="clearDisplay()">C</button>
+            <button class="btn-special" onclick="appendOperator('÷')">÷</button>
+            <button class="btn-operator" onclick="appendOperator('×')">×</button>
+
+            <button class="btn-number" onclick="appendNumber('7')">7</button>
+            <button class="btn-number" onclick="appendNumber('8')">8</button>
+            <button class="btn-number" onclick="appendNumber('9')">9</button>
+            <button class="btn-operator" onclick="appendOperator('-')">-</button>
+
+            <button class="btn-number" onclick="appendNumber('4')">4</button>
+            <button class="btn-number" onclick="appendNumber('5')">5</button>
+            <button class="btn-number" onclick="appendNumber('6')">6</button>
+            <button class="btn-operator" onclick="appendOperator('+')">+</button>
+
+            <button class="btn-number" onclick="appendNumber('1')">1</button>
+            <button class="btn-number" onclick="appendNumber('2')">2</button>
+            <button class="btn-number" onclick="appendNumber('3')">3</button>
+            <button class="btn-operator" onclick="calculate()">=</button>
+
+            <button class="btn-number span-2" onclick="appendNumber('0')">0</button>
+            <button class="btn-number" onclick="appendDecimal()">.</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const historyDisplay = document.getElementById('history');
+        
+        let currentOperand = '0';
+        let previousOperand = '';
+        let operation = null;
+        let shouldResetDisplay = false;
+
+        function updateDisplay() {
+            display.innerText = currentOperand;
+            if (currentOperand.length > 7) {
+                display.style.fontSize = '3rem';
+            } else if (currentOperand.length > 5) {
+                display.style.fontSize = '3.8rem';
+            } else {
+                display.style.fontSize = '4.5rem';
+            }
+        }
+
+        function clearDisplay() {
+            currentOperand = '0';
+            previousOperand = '';
+            operation = null;
+            historyDisplay.innerText = '';
+            updateDisplay();
+        }
+
+        function appendNumber(number) {
+            if (currentOperand === '0' || shouldResetDisplay) {
+                currentOperand = number;
+                shouldResetDisplay = false;
+            } else {
+                currentOperand += number;
+            }
+            updateDisplay();
+        }
+
+        function appendDecimal() {
+            if (shouldResetDisplay) {
+                currentOperand = '0.';
+                shouldResetDisplay = false;
+                updateDisplay();
+                return;
+            }
+            if (!currentOperand.includes('.')) {
+                currentOperand += '.';
+                updateDisplay();
+            }
+        }
+
+        function appendOperator(op) {
+            if (operation !== null && !shouldResetDisplay) {
+                calculate();
+            }
+            previousOperand = currentOperand;
+            operation = op;
+            historyDisplay.innerText = `${previousOperand} ${operation}`;
+            shouldResetDisplay = true;
+        }
+
+        function calculate() {
+            if (operation === null || shouldResetDisplay) return;
+
+            let result;
+            const prev = parseFloat(previousOperand);
+            const current = parseFloat(currentOperand);
+
+            if (isNaN(prev) || !isNaN(current) === false) return;
+
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '×':
+                    result = prev * current;
+                    break;
+                case '÷':
+                    if (current === 0) {
+                        alert("Cannot divide by zero");
+                        clearDisplay();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+
+            // Handle floating point precision issues (e.g., 0.1 + 0.2)
+            result = Math.round(result * 1e9) / 1e9;
+
+            historyDisplay.innerText = `${previousOperand} ${operation} ${currentOperand} =`;
+            currentOperand = result.toString();
+            operation = null;
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
